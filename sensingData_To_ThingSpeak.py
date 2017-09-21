@@ -3,25 +3,24 @@ import time
 import httplib, urllib
 import json
 
-deviceId = ""
-deviceKey = ""
+ApiKey = ""
 wioLink_access_token = ""
 
-def post_to_mcs(payload):
-    headers = {"Content-type": "application/json", "deviceKey": deviceKey}
+def post_to_thingspeak(payload):
+    headers = {"Content-type": "application/x-www-form-urlencoded","Accept": "text/plain"}
     not_connected = 1
     while (not_connected):
         try:
-            conn = httplib.HTTPConnection("api.mediatek.com:80")
+            conn = httplib.HTTPConnection("api.thingspeak.com:80")
             conn.connect()
             not_connected = 0
         except (httplib.HTTPException, socket.error) as ex:
             print "Error: %s" % ex
             time.sleep(10)  # sleep 10 seconds
 
-    conn.request("POST", "/mcs/v2/devices/" + deviceId + "/datapoints", json.dumps(payload), headers)
+    conn.request("POST", "/update", payload, headers)
     response = conn.getresponse()
-    print( response.status, response.reason, json.dumps(payload), time.strftime("%c"))
+    print( response.status, response.reason, payload, time.strftime("%c"))
     data = response.read()
     conn.close()
 
@@ -35,6 +34,6 @@ while True:
         print data1
         data = json.loads(data1)
         print "moisture: ", data['moisture']
-        payload = {"datapoints":[{"dataChnId":"moisture","values":{"value":data['moisture']}}]}
-        post_to_mcs(payload)
+        params = urllib.urlencode({'field1': data['moisture'], 'key': ApiKey})
+        post_to_thingspeak(params)
     time.sleep(10)
